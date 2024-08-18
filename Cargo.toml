@@ -1,0 +1,19 @@
+[package]
+name = "altcha-lib-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.38"
+rand = "0.9.0-alpha.2"
+sha2 = "0.11.0-pre.4"
+base16ct = { version = "0.2.0", features = ["alloc"] }
+sha1 = "0.11.0-pre.4"
+hmac = "0.13.0-pre.4"
+serde = { version = "1.0.208", features = ["derive"] }
+serde_json = { version = "1.0.125", optional = true }
+
+
+[features]
+default = ["json"]
+json = ["serde_json"]
