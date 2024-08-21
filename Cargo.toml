@@ -6,6 +6,7 @@ authors = ["jmic <jmic@users.noreply.github.com>"]
 description = "Community implementation of the Altcha library in Rust for your own server applications to create and validate challenges and responses."
 license = "Apache-2.0"
 readme = "README.md"
+repository = "https://github.com/jmic/altcha-lib-rs"
 
 [lib]
 path = "src/lib.rs"

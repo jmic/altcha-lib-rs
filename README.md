@@ -1,7 +1,9 @@
 # Community ALTCHA Rust Library &emsp; [![Build & test](https://github.com/jmic/altcha-lib-rs/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/jmic/altcha-lib-rs/actions/workflows/build-and-test.yml)
 
-**Community implementation of the Altcha library in Rust for your
+**Community implementation of the ALTCHA library in Rust for your
 own server applications to create and validate challenges and responses.**
+
+For more information about ALTCHA <https://altcha.org/docs>
 
 ---
 
