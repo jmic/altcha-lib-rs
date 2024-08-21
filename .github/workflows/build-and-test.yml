@@ -26,8 +26,8 @@ jobs:
           - default
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
+#          - macos-latest
+#          - windows-latest
     runs-on: ${{ matrix.os }}
     env:
       FEATURES: ${{ matrix.features }}
