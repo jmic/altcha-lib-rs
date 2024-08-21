@@ -98,8 +98,6 @@ async fn get_challenge() -> actix_web::Result<web::Json<Challenge>, ErrorRespons
     let res = altcha_lib_rs::create_challenge(ChallengeOptions {
         hmac_key: SECRET_KEY,
         expires: Some(Utc::now() + chrono::TimeDelta::minutes(5)),
-        number: Some(22222),
-        max_number: Some(100),
         ..Default::default()
     })?;
     Ok(web::Json(res))
