@@ -9,7 +9,7 @@ own server applications to create and validate challenges and responses.**
 
 ```toml
 [dependencies]
-altcha-lib-rs = { version = "1.0", features = ["json"] }
+altcha-lib-rs = { version = "0", features = ["json"] }
 ```
 
 ## Example
@@ -42,3 +42,5 @@ let string_payload = serde_json::to_string(&payload).unwrap();
 // receive the solution from the client and verify it
 verify_json_solution(&string_payload, "super-secret", true).expect("should be verified");
 ```
+
+### See [example server](https://github.com/jmic/altcha-lib-rs/blob/main/examples/server.rs)
