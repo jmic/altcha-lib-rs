@@ -6,7 +6,7 @@ use error::Error;
 use utils::ParamsMapType;
 
 mod algorithm;
-mod error;
+pub mod error;
 mod utils;
 
 pub const DEFAULT_MAX_NUMBER: u64 = 1000000;
@@ -15,14 +15,14 @@ pub const DEFAULT_ALGORITHM: AltchaAlgorithm = AltchaAlgorithm::Sha256;
 
 #[derive(Debug, Clone, Default)]
 pub struct ChallengeOptions<'a> {
-    algorithm: Option<AltchaAlgorithm>,
-    max_number: Option<u64>,
-    salt_length: Option<usize>,
-    hmac_key: &'a str,
-    salt: Option<String>,
-    number: Option<u64>,
-    expires: Option<DateTime<Utc>>,
-    params: Option<ParamsMapType>,
+    pub algorithm: Option<AltchaAlgorithm>,
+    pub max_number: Option<u64>,
+    pub salt_length: Option<usize>,
+    pub hmac_key: &'a str,
+    pub salt: Option<String>,
+    pub number: Option<u64>,
+    pub expires: Option<DateTime<Utc>>,
+    pub params: Option<ParamsMapType>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -41,6 +41,7 @@ pub struct Payload {
     number: u64,
     salt: String,
     signature: String,
+    took: Option<u32>,
 }
 
 pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
@@ -51,7 +52,7 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
     let salt = options.salt.unwrap_or_else(|| base16ct::lower::encode_string(utils::random_bytes(salt_length).as_slice()));
 
     if options.number.is_some_and(|number| number > max_number) {
-        return Err(Error::WrongChallengeInput(format!("number exides max_number {} > {}", options.number.unwrap(), max_number)));
+        return Err(Error::WrongChallengeInput(format!("number exceeds max_number {} > {}", options.number.unwrap(), max_number)));
     }
     let number = options.number.unwrap_or_else(|| utils::random_int(max_number));
 
@@ -82,10 +83,10 @@ pub fn create_json_challenge(options: ChallengeOptions) -> Result<String, Error>
 #[cfg(feature = "json")]
 pub fn verify_json_solution(payload: &str, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
     let payload_decoded: Payload = serde_json::from_str(payload)?;
-    verify_solution(payload_decoded, hmac_key, check_expire)
+    verify_solution(&payload_decoded, hmac_key, check_expire)
 }
 
-pub fn verify_solution(payload: Payload, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
+pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
     let (_, salt_params) = utils::extract_salt_params(&payload.salt);
 
     if check_expire {
@@ -102,12 +103,12 @@ pub fn verify_solution(payload: Payload, hmac_key: &str, check_expire: bool) -> 
     }
 
     let options = ChallengeOptions {
-        algorithm: Some(payload.algorithm),
+        algorithm: Some(payload.algorithm.clone()),
         max_number: None,
         salt_length: None,
         hmac_key,
         salt: Some(payload.salt.clone()),
-        number: Some(payload.number),
+        number: Some(payload.number.clone()),
         expires: None,
         params: None,
     };
@@ -143,24 +144,18 @@ mod tests {
     #[cfg(feature = "json")]
     fn test_verify_solution() {
         let data = r#"
-        {
-            "algorithm": "SHA-512",
-            "challenge": "ca6dc405dbe2c4c35849eaf434cafa852eacd27e70494220ecef849bb4545b670ed3e6adecc27d95768c1d4985753307ed29ee0188800d7eb37ce76bbf0343cb",
-            "number": 1000,
-            "salt": "blablabla",
-            "signature": "b2e4f529389c32c3960438ab12409f298014e580b0c75a5ed6664c7a19e5ff1607ee2690c25f7977bbde126d677f0e18cfbb8487a7f4f06ab199fd27bfd26af1"
-        }"#.to_string();
-        verify_json_solution(&data, &"blabla".to_string(), true).expect("should be ok");
+        {"algorithm":"SHA-256","challenge":"aa9c8ec8057413dd8220e21e15ab54b095fb3c840601d44c39bece8d9df34529","number":971813,"salt":"3065d108b2314f5ecc7e1207","signature":"d6c436288f1979f298f6532cea31db9e84e6338f4f58a9e00cb4105abbd11397","took":9417}"#.to_string();
+        verify_json_solution(&data, &"super-secret".to_string(), true).expect("should be ok");
     }
 
     #[test]
     #[cfg(feature = "json")]
     fn test_challenge() {
-        let challenge = create_challenge(ChallengeOptions{algorithm: None, max_number: None, number: None, salt: None, hmac_key: "my_key", params: None, expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)), salt_length: None}).expect("should be ok");
+        let challenge = create_challenge(ChallengeOptions{algorithm: None, max_number: None, number: None, salt: None, hmac_key: "super-secret", params: None, expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)), salt_length: None}).expect("should be ok");
         let res = solve_challenge(&challenge.challenge, &challenge.salt, None, None, 0).expect("need to be solved");
-        let payload = Payload {algorithm: challenge.algorithm, challenge: challenge.challenge, number: res, salt: challenge.salt, signature: challenge.signature };
+        let payload = Payload {algorithm: challenge.algorithm, challenge: challenge.challenge, number: res, salt: challenge.salt, signature: challenge.signature, took: None };
         let string_payload = serde_json::to_string(&payload).unwrap();
-        verify_json_solution(&string_payload, "my_key", true).expect("should be ok");
+        verify_json_solution(&string_payload, "super-secret", true).expect("should be ok");
     }
 
     #[test]
