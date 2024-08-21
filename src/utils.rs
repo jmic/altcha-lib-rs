@@ -21,7 +21,7 @@ pub fn random_bytes(len: usize) -> Vec<u8> {
 pub fn random_int(max: u64) -> u64 {
     let mut rng = rand::thread_rng();
     let dist = rand::distributions::Uniform::new_inclusive(0, max);
-    rng.sample(&dist)
+    rng.sample(dist)
 }
 
 pub fn hash_function(altcha_algorithm: &AltchaAlgorithm, data: &str) -> String {
@@ -84,7 +84,7 @@ pub fn extract_salt_params(salt: &str) -> (String, ParamsMapType) {
 
 pub fn generate_url_from_salt_params(params: &ParamsMapType) -> String {
     params
-        .into_iter()
+        .iter()
         .map(|(key, value)| key.to_owned() + "=" + value)
         .reduce(|acc, e| acc + "&" + e.as_str())
         .unwrap()

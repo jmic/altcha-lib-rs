@@ -17,7 +17,6 @@
 // limitations under the License.
 
 use algorithm::AltchaAlgorithm;
-use base16ct;
 use chrono::{DateTime, Utc};
 use error::Error;
 use serde::{Deserialize, Serialize};
@@ -227,12 +226,12 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
     }
 
     let options = ChallengeOptions {
-        algorithm: Some(payload.algorithm.clone()),
+        algorithm: Some(payload.algorithm),
         max_number: None,
         salt_length: None,
         hmac_key,
         salt: Some(payload.salt.clone()),
-        number: Some(payload.number.clone()),
+        number: Some(payload.number),
         expires: None,
         params: None,
     };

@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 /// Algorithm options for the challenge
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum AltchaAlgorithm {
     #[serde(rename = "SHA-1")]
     Sha1,
