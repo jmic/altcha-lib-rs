@@ -1,14 +1,14 @@
+use crate::algorithm::AltchaAlgorithm;
+use hmac::digest::Digest;
+use hmac::{Hmac, Mac};
 use rand::Rng;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
-use hmac::digest::Digest;
-use hmac::{Hmac, Mac};
 use std::collections::HashMap;
-use crate::algorithm::AltchaAlgorithm;
 
 type HmacSha1 = Hmac<Sha1>;
 type HmacSha256 = Hmac<Sha256>;
-type HmacSha512= Hmac<Sha512>;
+type HmacSha512 = Hmac<Sha512>;
 pub type ParamsMapType = HashMap<String, String>;
 
 pub fn random_bytes(len: usize) -> Vec<u8> {
@@ -44,19 +44,22 @@ pub fn hash_function(altcha_algorithm: &AltchaAlgorithm, data: &str) -> String {
 pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) -> String {
     match altcha_algorithm {
         AltchaAlgorithm::Sha1 => {
-            let mut mac = HmacSha1::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
+            let mut mac =
+                HmacSha1::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
             base16ct::lower::encode_string(&res.into_bytes())
         }
         AltchaAlgorithm::Sha256 => {
-            let mut mac = HmacSha256::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
+            let mut mac =
+                HmacSha256::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
             base16ct::lower::encode_string(&res.into_bytes())
         }
         AltchaAlgorithm::Sha512 => {
-            let mut mac = HmacSha512::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
+            let mut mac =
+                HmacSha512::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
             base16ct::lower::encode_string(&res.into_bytes())
@@ -67,20 +70,24 @@ pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) 
 pub fn extract_salt_params(salt: &str) -> (String, ParamsMapType) {
     let mut salt_params = ParamsMapType::new();
     if !salt.contains("?") {
-        return (salt.to_string(), salt_params)
+        return (salt.to_string(), salt_params);
     }
     let (salt, salt_query) = salt.split_once("?").unwrap();
     for parts in salt_query.split("&") {
-        let Some((key, value)) = parts.split_once("=") else { continue };
+        let Some((key, value)) = parts.split_once("=") else {
+            continue;
+        };
         salt_params.insert(key.to_string(), value.to_string());
     }
     (salt.to_string(), salt_params)
 }
 
 pub fn generate_url_from_salt_params(params: &ParamsMapType) -> String {
-    params.into_iter().map(|(key, value)| {
-        key.to_owned() + "=" + value
-    }).reduce(|acc, e| {acc + "&" + e.as_str()}).unwrap()
+    params
+        .into_iter()
+        .map(|(key, value)| key.to_owned() + "=" + value)
+        .reduce(|acc, e| acc + "&" + e.as_str())
+        .unwrap()
 }
 
 #[cfg(test)]

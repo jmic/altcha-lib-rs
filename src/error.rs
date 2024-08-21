@@ -9,7 +9,7 @@ pub enum Error {
     VerificationMismatchSignature(String),
     SolveChallengeMaxNumberReached(String),
     WrongChallengeInput(String),
-    General(String)
+    General(String),
 }
 
 #[cfg(feature = "json")]

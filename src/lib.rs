@@ -16,11 +16,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use chrono::{DateTime, Utc};
-use base16ct;
-use serde::{Deserialize, Serialize};
 use algorithm::AltchaAlgorithm;
+use base16ct;
+use chrono::{DateTime, Utc};
 use error::Error;
+use serde::{Deserialize, Serialize};
 use utils::ParamsMapType;
 
 /// Algorithm options for the challenge
@@ -93,17 +93,28 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
     let max_number = options.max_number.unwrap_or(DEFAULT_MAX_NUMBER);
     let salt_length = options.salt_length.unwrap_or(DEFAULT_SALT_LENGTH);
 
-    let salt = options.salt.unwrap_or_else(|| base16ct::lower::encode_string(utils::random_bytes(salt_length).as_slice()));
+    let salt = options.salt.unwrap_or_else(|| {
+        base16ct::lower::encode_string(utils::random_bytes(salt_length).as_slice())
+    });
 
     if options.number.is_some_and(|number| number > max_number) {
-        return Err(Error::WrongChallengeInput(format!("number exceeds max_number {} > {}", options.number.unwrap(), max_number)));
+        return Err(Error::WrongChallengeInput(format!(
+            "number exceeds max_number {} > {}",
+            options.number.unwrap(),
+            max_number
+        )));
     }
-    let number = options.number.unwrap_or_else(|| utils::random_int(max_number));
+    let number = options
+        .number
+        .unwrap_or_else(|| utils::random_int(max_number));
 
     let (mut salt, mut salt_params) = utils::extract_salt_params(salt.as_str());
 
-    if let Some(expire_value) = options.expires{
-        salt_params.insert(String::from(EXPIRES_PRAM), expire_value.timestamp().to_string());
+    if let Some(expire_value) = options.expires {
+        salt_params.insert(
+            String::from(EXPIRES_PRAM),
+            expire_value.timestamp().to_string(),
+        );
     }
     if let Some(params) = options.params {
         salt_params.extend(params);
@@ -117,7 +128,13 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
     let challenge = utils::hash_function(&algorithm, salt_with_number.as_str());
     let signature = utils::hmac_function(&algorithm, &challenge, options.hmac_key);
 
-    Ok(Challenge{ algorithm, challenge, maxnumber: max_number, salt, signature })
+    Ok(Challenge {
+        algorithm,
+        challenge,
+        maxnumber: max_number,
+        salt,
+        signature,
+    })
 }
 /// Creates a challenge for the client to solve as a string containing a json.
 /// `features = ["json"]` must be enabled.
@@ -169,7 +186,11 @@ pub fn create_json_challenge(options: ChallengeOptions) -> Result<String, Error>
 /// let res =  verify_json_solution(&payload_str, &"super-secret".to_string(), true);
 /// ```
 #[cfg(feature = "json")]
-pub fn verify_json_solution(payload: &str, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
+pub fn verify_json_solution(
+    payload: &str,
+    hmac_key: &str,
+    check_expire: bool,
+) -> Result<(), Error> {
     let payload_decoded: Payload = serde_json::from_str(payload)?;
     verify_solution(&payload_decoded, hmac_key, check_expire)
 }
@@ -190,11 +211,17 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
         if let Some(expire_str) = salt_params.get(&String::from(EXPIRES_PRAM)) {
             let expire_timestamp: i64 = expire_str.parse()?;
             let Some(expire) = DateTime::from_timestamp(expire_timestamp, 0) else {
-                return Err(Error::ParseExpire(format!("Failed to parse timestamp {}", expire_timestamp)))
+                return Err(Error::ParseExpire(format!(
+                    "Failed to parse timestamp {}",
+                    expire_timestamp
+                )));
             };
             let now_time: DateTime<Utc> = Utc::now();
-            if expire < now_time{
-                return Err(Error::VerificationFailedExpired(format!("expired {}", expire - now_time)))
+            if expire < now_time {
+                return Err(Error::VerificationFailedExpired(format!(
+                    "expired {}",
+                    expire - now_time
+                )));
             }
         }
     }
@@ -211,10 +238,16 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
     };
     let expected_challenge = create_challenge(options)?;
     if expected_challenge.challenge != payload.challenge {
-        return Err(Error::VerificationMismatchChallenge(format!("mismatch expected challenge {} != {}", expected_challenge.challenge, payload.challenge)))
+        return Err(Error::VerificationMismatchChallenge(format!(
+            "mismatch expected challenge {} != {}",
+            expected_challenge.challenge, payload.challenge
+        )));
     }
     if expected_challenge.signature != payload.signature {
-        return Err(Error::VerificationMismatchSignature(format!("mismatch expected signature {} != {}", expected_challenge.signature, payload.signature)))
+        return Err(Error::VerificationMismatchSignature(format!(
+            "mismatch expected signature {} != {}",
+            expected_challenge.signature, payload.signature
+        )));
     }
     Ok(())
 }
@@ -246,7 +279,13 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
 ///  let res = solve_challenge(&challenge.challenge, &challenge.salt,
 ///     Some(challenge.algorithm), Some(challenge.maxnumber), 0);
 /// ```
-pub fn solve_challenge(challenge: &str, salt: &str, algorithm: Option<AltchaAlgorithm>, max_number: Option<u64>, start: u64) -> Result<u64, Error> {
+pub fn solve_challenge(
+    challenge: &str,
+    salt: &str,
+    algorithm: Option<AltchaAlgorithm>,
+    max_number: Option<u64>,
+    start: u64,
+) -> Result<u64, Error> {
     let selected_algorithm = algorithm.unwrap_or(DEFAULT_ALGORITHM);
     let selected_max_number = max_number.unwrap_or(DEFAULT_MAX_NUMBER);
 
@@ -257,7 +296,10 @@ pub fn solve_challenge(challenge: &str, salt: &str, algorithm: Option<AltchaAlgo
             return Ok(n);
         }
     }
-    Err(Error::SolveChallengeMaxNumberReached(format!("maximum iterations reached {}", selected_max_number)))
+    Err(Error::SolveChallengeMaxNumberReached(format!(
+        "maximum iterations reached {}",
+        selected_max_number
+    )))
 }
 
 #[cfg(test)]
@@ -275,9 +317,27 @@ mod tests {
     #[test]
     #[cfg(feature = "json")]
     fn test_challenge() {
-        let challenge = create_challenge(ChallengeOptions{algorithm: None, max_number: None, number: None, salt: None, hmac_key: "super-secret", params: None, expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)), salt_length: None}).expect("should be ok");
-        let res = solve_challenge(&challenge.challenge, &challenge.salt, None, None, 0).expect("need to be solved");
-        let payload = Payload {algorithm: challenge.algorithm, challenge: challenge.challenge, number: res, salt: challenge.salt, signature: challenge.signature, took: None };
+        let challenge = create_challenge(ChallengeOptions {
+            algorithm: None,
+            max_number: None,
+            number: None,
+            salt: None,
+            hmac_key: "super-secret",
+            params: None,
+            expires: Some(Utc::now() + chrono::TimeDelta::minutes(1)),
+            salt_length: None,
+        })
+        .expect("should be ok");
+        let res = solve_challenge(&challenge.challenge, &challenge.salt, None, None, 0)
+            .expect("need to be solved");
+        let payload = Payload {
+            algorithm: challenge.algorithm,
+            challenge: challenge.challenge,
+            number: res,
+            salt: challenge.salt,
+            signature: challenge.signature,
+            took: None,
+        };
         let string_payload = serde_json::to_string(&payload).unwrap();
         verify_json_solution(&string_payload, "super-secret", true).expect("should be ok");
     }
@@ -285,7 +345,7 @@ mod tests {
     #[test]
     #[cfg(feature = "json")]
     fn test_create_json_challenge() {
-        let challenge_json = create_json_challenge(ChallengeOptions{
+        let challenge_json = create_json_challenge(ChallengeOptions {
             algorithm: Some(AltchaAlgorithm::Sha1),
             max_number: Some(100000),
             number: Some(22222),
@@ -293,13 +353,17 @@ mod tests {
             hmac_key: "my_key",
             expires: Some(DateTime::from_timestamp(1715526540, 0).unwrap()),
             ..Default::default()
-        }).expect("should be ok");
-        assert_eq!(challenge_json, r#"{"algorithm":"SHA-1","challenge":"864412db92050e02c89e7e623c773491e8495990","maxnumber":100000,"salt":"blabla?expires=1715526540","signature":"2e66edb70874996e94430c62ac6e2815a092718d"}"#);
+        })
+        .expect("should be ok");
+        assert_eq!(
+            challenge_json,
+            r#"{"algorithm":"SHA-1","challenge":"864412db92050e02c89e7e623c773491e8495990","maxnumber":100000,"salt":"blabla?expires=1715526540","signature":"2e66edb70874996e94430c62ac6e2815a092718d"}"#
+        );
     }
 
     #[test]
     fn test_create_challenge_wrong_input() {
-        let challenge = create_challenge(ChallengeOptions{
+        let challenge = create_challenge(ChallengeOptions {
             max_number: Some(222),
             number: Some(100000),
             hmac_key: "my_key",
@@ -307,7 +371,6 @@ mod tests {
         });
         assert!(challenge.is_err());
     }
-
 }
 
 const EXPIRES_PRAM: &str = "expires";
