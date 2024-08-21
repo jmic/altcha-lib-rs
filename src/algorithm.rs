@@ -2,7 +2,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-
+/// Algorithm options for the challenge
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum AltchaAlgorithm {
     #[serde(rename="SHA-1")]

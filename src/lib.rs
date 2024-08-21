@@ -1,3 +1,7 @@
+//! Community implementation of the Altcha library in Rust for your own server applications to create and validate challenges and responses.
+//!
+//! For more details about Altcha see <https://altcha.org/docs>
+
 // Copyright 2024 jmic
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +23,9 @@ use algorithm::AltchaAlgorithm;
 use error::Error;
 use utils::ParamsMapType;
 
-mod algorithm;
+/// Algorithm options for the challenge
+pub mod algorithm;
+/// Errors
 pub mod error;
 mod utils;
 
@@ -27,6 +33,7 @@ pub const DEFAULT_MAX_NUMBER: u64 = 1000000;
 pub const DEFAULT_SALT_LENGTH: usize = 12;
 pub const DEFAULT_ALGORITHM: AltchaAlgorithm = AltchaAlgorithm::Sha256;
 
+/// ChallengeOptions defines the options for creating a challenge
 #[derive(Debug, Clone, Default)]
 pub struct ChallengeOptions<'a> {
     pub algorithm: Option<AltchaAlgorithm>,
@@ -39,25 +46,48 @@ pub struct ChallengeOptions<'a> {
     pub params: Option<ParamsMapType>,
 }
 
+/// Challenge defines the challenge send to the client
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Challenge {
-    algorithm: AltchaAlgorithm,
-    challenge: String,
-    maxnumber: u64,
-    salt: String,
-    signature: String,
+    pub algorithm: AltchaAlgorithm,
+    pub challenge: String,
+    pub maxnumber: u64,
+    pub salt: String,
+    pub signature: String,
 }
 
+/// Payload defines the response from the client
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Payload {
-    algorithm: AltchaAlgorithm,
-    challenge: String,
-    number: u64,
-    salt: String,
-    signature: String,
-    took: Option<u32>,
+    pub algorithm: AltchaAlgorithm,
+    pub challenge: String,
+    pub number: u64,
+    pub salt: String,
+    pub signature: String,
+    pub took: Option<u32>,
 }
 
+/// Creates a challenge for the client to solve.
+///
+/// # Arguments
+///
+/// * `options`: ChallengeOptions defines the options for creating a challenge
+///
+/// returns: Result<Challenge, Error> The new challenge or error.
+///
+/// # Examples
+///
+/// ```
+/// use std::default;
+/// use chrono::Utc;
+/// use altcha_lib_rs::{create_challenge, ChallengeOptions};
+/// let challenge = create_challenge(
+///     ChallengeOptions{
+///         hmac_key: "super-secret",
+///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         ..Default::default()
+///  });
+/// ```
 pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
     let algorithm = options.algorithm.unwrap_or(DEFAULT_ALGORITHM);
     let max_number = options.max_number.unwrap_or(DEFAULT_MAX_NUMBER);
@@ -89,17 +119,70 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
 
     Ok(Challenge{ algorithm, challenge, maxnumber: max_number, salt, signature })
 }
+/// Creates a challenge for the client to solve as a string containing a json.
+/// `features = ["json"]` must be enabled.
+///
+/// # Arguments
+///
+/// * `options`: ChallengeOptions defines the options for creating a challenge
+///
+/// returns: Result<String, Error> The new challenge formated as JSON string or error.
+///
+/// # Examples
+///
+/// ```
+/// use std::default;
+/// use chrono::Utc;
+/// use altcha_lib_rs::{create_challenge, create_json_challenge, ChallengeOptions};
+/// let challenge = create_json_challenge(
+///     ChallengeOptions{
+///         hmac_key: "super-secret",
+///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         ..Default::default()
+///  });
+/// ```
 #[cfg(feature = "json")]
 pub fn create_json_challenge(options: ChallengeOptions) -> Result<String, Error> {
     let challenge = create_challenge(options)?;
     Ok(serde_json::to_string(&challenge)?)
 }
+/// Verifies the json formated solution provided by the client.
+/// `features = ["json"]` must be enabled.
+///
+/// # Arguments
+///
+/// * `payload`: The json formated payload to verify.
+/// * `hmac_key`: The HMAC key used for verification.
+/// * `check_expire`: Whether to check if the challenge has expired.
+///
+/// returns: Result<(), Error> Whether the solution is valid.
+///
+/// # Examples
+///
+/// ```
+/// use altcha_lib_rs::verify_json_solution;
+/// let payload_str = r#"{
+///     "algorithm":"SHA-256","challenge":"aa9c8ec8057413dd8220e21e15ab54b095fb3c840601d44c39bece8d9df34529"
+///     ,"number":971813,"salt":"3065d108b2314f5ecc7e1207",
+///     "signature":"d6c436288f1979f298f6532cea31db9e84e6338f4f58a9e00cb4105abbd11397","took":9417
+/// }"#.to_string();
+/// let res =  verify_json_solution(&payload_str, &"super-secret".to_string(), true);
+/// ```
 #[cfg(feature = "json")]
 pub fn verify_json_solution(payload: &str, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
     let payload_decoded: Payload = serde_json::from_str(payload)?;
     verify_solution(&payload_decoded, hmac_key, check_expire)
 }
 
+/// Verifies the solution provided by the client.
+///
+/// # Arguments
+///
+/// * `payload`: The payload to verify.
+/// * `hmac_key`: The HMAC key used for verification.
+/// * `check_expire`: Whether to check if the challenge has expired.
+///
+/// returns: Result<(), Error> Whether the solution is valid.
 pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) -> Result<(), Error> {
     let (_, salt_params) = utils::extract_salt_params(&payload.salt);
 
@@ -136,6 +219,33 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
     Ok(())
 }
 
+/// Solves a challenge by brute force.
+/// Used for testing.
+///
+/// # Arguments
+///
+/// * `challenge`: The challenge to solve.
+/// * `salt`: The salt used in the challenge.
+/// * `algorithm`: The hash algorithm used. Optional.
+/// * `max_number`: The maximum number to try. Optional.
+/// * `start`: The starting number.
+///
+/// returns: Result<u64, Error> The solution or error.
+///
+/// # Examples
+///
+/// ```
+///  use chrono::Utc;
+///  use altcha_lib_rs::{create_challenge, solve_challenge, ChallengeOptions};
+///  let challenge = create_challenge(
+///     ChallengeOptions{
+///         hmac_key: "super-secret",
+///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         ..Default::default()
+///  })?;
+///  let res = solve_challenge(&challenge.challenge, &challenge.salt,
+///     Some(challenge.algorithm), Some(challenge.maxnumber), 0);
+/// ```
 pub fn solve_challenge(challenge: &str, salt: &str, algorithm: Option<AltchaAlgorithm>, max_number: Option<u64>, start: u64) -> Result<u64, Error> {
     let selected_algorithm = algorithm.unwrap_or(DEFAULT_ALGORITHM);
     let selected_max_number = max_number.unwrap_or(DEFAULT_MAX_NUMBER);
