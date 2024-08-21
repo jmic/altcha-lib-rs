@@ -242,7 +242,7 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
 ///         hmac_key: "super-secret",
 ///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
 ///         ..Default::default()
-///  })?;
+///  }).expect("internal error");
 ///  let res = solve_challenge(&challenge.challenge, &challenge.salt,
 ///     Some(challenge.algorithm), Some(challenge.maxnumber), 0);
 /// ```

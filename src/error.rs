@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum Error {
+    #[cfg(feature = "json")]
     ParseJson(serde_json::Error),
     ParseInteger(std::num::ParseIntError),
     ParseExpire(String),
@@ -11,6 +12,7 @@ pub enum Error {
     General(String)
 }
 
+#[cfg(feature = "json")]
 impl From<serde_json::Error> for Error {
     fn from(other: serde_json::Error) -> Self {
         Self::ParseJson(other)

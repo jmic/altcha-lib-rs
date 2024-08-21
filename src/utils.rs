@@ -2,7 +2,7 @@ use rand::Rng;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 use hmac::digest::Digest;
-use hmac::{Hmac, KeyInit, Mac};
+use hmac::{Hmac, Mac};
 use std::collections::HashMap;
 use crate::algorithm::AltchaAlgorithm;
 
@@ -20,7 +20,7 @@ pub fn random_bytes(len: usize) -> Vec<u8> {
 
 pub fn random_int(max: u64) -> u64 {
     let mut rng = rand::thread_rng();
-    let dist = rand::distr::Uniform::new_inclusive(0, max).unwrap();
+    let dist = rand::distributions::Uniform::new_inclusive(0, max);
     rng.sample(&dist)
 }
 
@@ -47,19 +47,19 @@ pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) 
             let mut mac = HmacSha1::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
-            base16ct::lower::encode_string(res.as_bytes())
+            base16ct::lower::encode_string(&res.into_bytes())
         }
         AltchaAlgorithm::Sha256 => {
             let mut mac = HmacSha256::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
-            base16ct::lower::encode_string(res.as_bytes())
+            base16ct::lower::encode_string(&res.into_bytes())
         }
         AltchaAlgorithm::Sha512 => {
             let mut mac = HmacSha512::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
             mac.update(data.as_bytes());
             let res = mac.finalize();
-            base16ct::lower::encode_string(res.as_bytes())
+            base16ct::lower::encode_string(&res.into_bytes())
         }
     }
 }
