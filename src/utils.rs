@@ -1,5 +1,5 @@
 use crate::algorithm::AltchaAlgorithm;
-use hmac::digest::Digest;
+use hmac::digest::{Digest, KeyInit};
 use hmac::{Hmac, Mac};
 use rand::Rng;
 use sha1::Sha1;
@@ -26,45 +26,31 @@ pub fn random_int(max: u64) -> u64 {
 
 pub fn hash_function(altcha_algorithm: &AltchaAlgorithm, data: &str) -> String {
     match altcha_algorithm {
-        AltchaAlgorithm::Sha1 => {
-            let hash = Sha1::digest(data);
-            base16ct::lower::encode_string(&hash)
-        }
-        AltchaAlgorithm::Sha256 => {
-            let hash = Sha256::digest(data);
-            base16ct::lower::encode_string(&hash)
-        }
-        AltchaAlgorithm::Sha512 => {
-            let hash = Sha512::digest(data);
-            base16ct::lower::encode_string(&hash)
-        }
+        AltchaAlgorithm::Sha1 => hash_str_to_hex::<Sha1>(data),
+        AltchaAlgorithm::Sha256 => hash_str_to_hex::<Sha256>(data),
+        AltchaAlgorithm::Sha512 => hash_str_to_hex::<Sha512>(data),
     }
+}
+
+fn hash_str_to_hex<Hash: Digest>(data: &str) -> String {
+    let hash = Hash::digest(data);
+    base16ct::lower::encode_string(&hash)
 }
 
 pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) -> String {
     match altcha_algorithm {
-        AltchaAlgorithm::Sha1 => {
-            let mut mac =
-                HmacSha1::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
-            mac.update(data.as_bytes());
-            let res = mac.finalize();
-            base16ct::lower::encode_string(&res.into_bytes())
-        }
-        AltchaAlgorithm::Sha256 => {
-            let mut mac =
-                HmacSha256::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
-            mac.update(data.as_bytes());
-            let res = mac.finalize();
-            base16ct::lower::encode_string(&res.into_bytes())
-        }
-        AltchaAlgorithm::Sha512 => {
-            let mut mac =
-                HmacSha512::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
-            mac.update(data.as_bytes());
-            let res = mac.finalize();
-            base16ct::lower::encode_string(&res.into_bytes())
-        }
+        AltchaAlgorithm::Sha1 => hmac_from_slice_to_hex_str::<HmacSha1>(data, key),
+        AltchaAlgorithm::Sha256 => hmac_from_slice_to_hex_str::<HmacSha256>(data, key),
+        AltchaAlgorithm::Sha512 => hmac_from_slice_to_hex_str::<HmacSha512>(data, key),
     }
+}
+
+fn hmac_from_slice_to_hex_str<HmacType: KeyInit + Mac>(data: &str, key: &str) -> String {
+    let mut mac = <HmacType as hmac::Mac>::new_from_slice(key.as_bytes())
+        .expect("HMAC can take key of any size");
+    mac.update(data.as_bytes());
+    let res = mac.finalize();
+    base16ct::lower::encode_string(&res.into_bytes())
 }
 
 pub fn extract_salt_params(salt: &str) -> (String, ParamsMapType) {
