@@ -19,10 +19,10 @@ jobs:
       - uses: brndnmtthws/rust-action@v1
         with:
           toolchain: stable
-      - run: cargo build
+      - run: cargo build --all-features
       - run: cargo test
       - run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
-      - run: cargo publish
+      - run: cargo publish --all-features
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
