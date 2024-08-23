@@ -1,7 +1,7 @@
 # Community ALTCHA Rust Library &emsp; [![Build & test](https://github.com/jmic/altcha-lib-rs/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/jmic/altcha-lib-rs/actions/workflows/build-and-test.yml)
 
 **Community implementation of the ALTCHA library in Rust for your
-own server applications to create and validate challenges and responses.**
+own server application to create and validate challenges and responses.**
 
 For more information about ALTCHA <https://altcha.org/docs>
 
@@ -15,7 +15,7 @@ For more information about ALTCHA <https://altcha.org/docs>
 **Not part of this library:** 
 - Methods to call ALTCHA's spam filter API
 - machine-to-machine ALTCHA
-- Store previously verified challenges to prevent replay attack prevention   
+- Store previously verified challenges to prevent replay attacks   
 
 ## Setup
 
