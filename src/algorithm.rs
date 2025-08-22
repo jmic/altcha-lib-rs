@@ -7,6 +7,8 @@ use std::str::FromStr;
 pub enum AltchaAlgorithm {
     #[serde(rename = "SHA-256")]
     Sha256,
+    #[serde(rename = "SHA-384")]
+    Sha384,
     #[serde(rename = "SHA-512")]
     Sha512,
 }
@@ -16,6 +18,7 @@ impl FromStr for AltchaAlgorithm {
     fn from_str(input: &str) -> Result<AltchaAlgorithm, Self::Err> {
         match input {
             "SHA-256" => Ok(AltchaAlgorithm::Sha256),
+            "SHA-384" => Ok(AltchaAlgorithm::Sha384),
             "SHA-512" => Ok(AltchaAlgorithm::Sha512),
             _ => Err(()),
         }
@@ -24,10 +27,14 @@ impl FromStr for AltchaAlgorithm {
 
 impl Display for AltchaAlgorithm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            AltchaAlgorithm::Sha256 => "SHA-256",
-            AltchaAlgorithm::Sha512 => "SHA-512",
-        };
-        write!(f, "{}", str)
+        write!(
+            f,
+            "{}",
+            match self {
+                AltchaAlgorithm::Sha256 => "SHA-256",
+                AltchaAlgorithm::Sha384 => "SHA-384",
+                AltchaAlgorithm::Sha512 => "SHA-512",
+            }
+        )
     }
 }
