@@ -18,7 +18,7 @@ required-features = ["json", "sha1"]
 
 [dependencies]
 chrono = "0.4"
-rand = "0.9"
+rand = "0.10"
 sha2 = "0"
 base16ct = { version = "1.0", features = ["alloc"] }
 sha1 = { version = "0", optional = true }
