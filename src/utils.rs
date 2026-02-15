@@ -2,7 +2,7 @@ use crate::algorithm::AltchaAlgorithm;
 use hmac::digest::{Digest, KeyInit};
 use hmac::{Hmac, Mac};
 use rand::distr::uniform::Error;
-use rand::Rng;
+use rand::RngExt;
 #[cfg(feature = "sha1")]
 use sha1::Sha1;
 use sha2::{Sha256, Sha384, Sha512};
