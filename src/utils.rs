@@ -54,8 +54,7 @@ pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) 
 }
 
 fn hmac_from_slice_to_hex_str<HmacType: KeyInit + Mac>(data: &str, key: &str) -> String {
-    let mut mac = <HmacType as hmac::Mac>::new_from_slice(key.as_bytes())
-        .expect("HMAC can take key of any size");
+    let mut mac = HmacType::new_from_slice(key.as_bytes()).expect("HMAC can take key of any size");
     mac.update(data.as_bytes());
     let res = mac.finalize();
     base16ct::lower::encode_string(&res.into_bytes())
