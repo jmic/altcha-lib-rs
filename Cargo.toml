@@ -34,4 +34,4 @@ sha1 = ["dep:sha1"]
 
 [dev-dependencies]
 actix-web = "4"
-base64 = "0.22"
+base64 = "0.23"
